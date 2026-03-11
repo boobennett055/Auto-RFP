@@ -8,36 +8,39 @@ export default function LoadingPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    // Give Supabase time to process the session from the URL hash
-    const checkSession = async () => {
-      // Wait for Supabase to pick up the session from the magic link
-      await new Promise(r => setTimeout(r, 2000))
+    const handleAuth = async () => {
+      // Get the hash from the URL - Supabase puts the token here
+      const hash = window.location.hash
       
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (session) {
-        router.push('/dashboard')
-      } else {
-        // Try once more after another second
+      if (hash && hash.includes('access_token')) {
+        // Let Supabase process the hash automatically
+        await new Promise(r => setTimeout(r, 2000))
+      }
+
+      // Keep checking for up to 8 seconds
+      for (let i = 0; i < 8; i++) {
         await new Promise(r => setTimeout(r, 1000))
-        const { data: { session: session2 } } = await supabase.auth.getSession()
-        if (session2) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
           router.push('/dashboard')
-        } else {
-          router.push('/')
+          return
         }
       }
+      
+      // Timed out - go back to login
+      router.push('/')
     }
-    
-    checkSession()
+
+    handleAuth()
   }, [])
 
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: '#0f2744' }}>
       <div className="text-center">
-        <div className="text-white text-5xl mb-6">⟳</div>
+        <div className="text-white text-5xl mb-6" style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⟳</div>
         <div className="text-white text-lg font-semibold mb-2">Signing you in...</div>
         <div className="text-slate-400 text-sm">Just a moment</div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     </div>
   )

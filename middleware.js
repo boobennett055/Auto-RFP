@@ -1,7 +1,2 @@
-export async function middleware(request) {
-  return
-}
-
-export const config = {
-  matcher: [],
-}
+export function middleware() {}
+export const config = { matcher: [] }

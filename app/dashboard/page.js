@@ -31,11 +31,12 @@ export default function Dashboard() {
 
   useEffect(() => { bootstrap() }, [])
 
-  const bootstrap = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/'); return }
-    setUser(user)
+const bootstrap = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { router.push('/'); return }
+    setUser(session.user)
     await Promise.all([loadSettings(), loadKB(), loadPastRFPs()])
+
   }
 
   const loadSettings = async () => {

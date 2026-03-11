@@ -20,8 +20,7 @@ const DEF_CFG = {
 
 export default function Dashboard() {
   const [pg, setPg] = useState('home')
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [ready, setReady] = useState(false)
   const [cfg, setCfg] = useState(DEF_CFG)
   const [kb, setKb] = useState([])
   const [past, setPast] = useState([])
@@ -31,30 +30,16 @@ export default function Dashboard() {
   const supabase = createClient()
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        router.push('/')
-        return
-      }
-      setUser(session.user)
-      setLoading(false)
-      loadSettings()
-      loadKB()
-      loadPastRFPs()
-    })
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        router.push('/')
-      } else if (session) {
-        setUser(session.user)
-        setLoading(false)
-      }
-    })
-
-    return () => subscription.unsubscribe()
+    // Check simple session auth
+    const authed = sessionStorage.getItem('rfp_authed')
+    if (!authed) {
+      router.push('/')
+      return
+    }
+    setReady(true)
+    loadSettings()
+    loadKB()
+    loadPastRFPs()
   }, [])
 
   const loadSettings = async () => {
@@ -77,8 +62,8 @@ export default function Dashboard() {
     setTimeout(() => setNotif(null), 3500)
   }
 
-  const signOut = async () => {
-    await supabase.auth.signOut()
+  const signOut = () => {
+    sessionStorage.removeItem('rfp_authed')
     router.push('/')
   }
 
@@ -87,18 +72,15 @@ export default function Dashboard() {
     setPg('editor')
   }
 
-  if (loading) {
+  if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#0f2744' }}>
-        <div className="text-center">
-          <div className="text-white text-4xl mb-4">⟳</div>
-          <div className="text-white text-sm opacity-60">Loading RFP Studio...</div>
-        </div>
+        <div className="text-white text-sm opacity-60">Loading...</div>
       </div>
     )
   }
 
-  const sharedProps = { cfg, setCfg, kb, setKb, past, setPast, wip, setWip, toast, supabase, user, openRFP, loadKB, loadPastRFPs, loadSettings }
+  const sharedProps = { cfg, setCfg, kb, setKb, past, setPast, wip, setWip, toast, supabase, user: { email: 'team' }, openRFP, loadKB, loadPastRFPs, loadSettings }
 
   return (
     <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
@@ -111,9 +93,8 @@ export default function Dashboard() {
         {pg === 'past'     && <PastRFPsView {...sharedProps} />}
         {pg === 'settings' && <SettingsView {...sharedProps} />}
       </div>
-
       {notif && (
-        <div className={`fixed bottom-5 right-5 px-5 py-3 rounded-2xl text-white text-sm font-medium shadow-2xl z-50 slideUp flex items-center gap-2 ${notif.err ? 'bg-red-500' : 'bg-emerald-500'}`}>
+        <div className={`fixed bottom-5 right-5 px-5 py-3 rounded-2xl text-white text-sm font-medium shadow-2xl z-50 flex items-center gap-2 ${notif.err ? 'bg-red-500' : 'bg-emerald-500'}`}>
           {notif.err ? '⚠️' : '✓'} {notif.msg}
         </div>
       )}

@@ -9,6 +9,7 @@ import EditorView from '../../components/EditorView'
 import KnowledgeBaseView from '../../components/KnowledgeBaseView'
 import PastRFPsView from '../../components/PastRFPsView'
 import SettingsView from '../../components/SettingsView'
+export const dynamic = 'force-dynamic'
 
 const DEF_CFG = {
   company: 'Your Company Name',

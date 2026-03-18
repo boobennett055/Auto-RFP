@@ -1,6 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, useCallback } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '../../lib/supabase'
 import Nav from '../../components/Nav'
 import HomeView from '../../components/HomeView'
@@ -9,6 +9,7 @@ import EditorView from '../../components/EditorView'
 import KnowledgeBaseView from '../../components/KnowledgeBaseView'
 import PastRFPsView from '../../components/PastRFPsView'
 import SettingsView from '../../components/SettingsView'
+
 export const dynamic = 'force-dynamic'
 
 const DEF_CFG = {
@@ -20,15 +21,21 @@ const DEF_CFG = {
 }
 
 export default function Dashboard() {
-  const [pg, setPg] = useState('home')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const pg = searchParams.get('page') || 'home'
+
   const [ready, setReady] = useState(false)
   const [cfg, setCfg] = useState(DEF_CFG)
   const [kb, setKb] = useState([])
   const [past, setPast] = useState([])
   const [wip, setWip] = useState(null)
   const [notif, setNotif] = useState(null)
-  const router = useRouter()
   const supabase = createClient()
+
+  const setPg = useCallback((page) => {
+    router.push(`/dashboard?page=${page}`)
+  }, [router])
 
   useEffect(() => {
     setReady(true)
@@ -57,13 +64,11 @@ export default function Dashboard() {
     setTimeout(() => setNotif(null), 3500)
   }
 
-  const signOut = () => {
-    router.push('/')
-  }
+  const signOut = () => router.push('/')
 
   const openRFP = (rfp) => {
     setWip(rfp)
-    setPg('editor')
+    router.push('/dashboard?page=editor')
   }
 
   if (!ready) {
